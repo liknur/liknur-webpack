@@ -1,6 +1,6 @@
 {
   "name": "liknur-webpack",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A library that compresses and builds the liknur project based on the configuration file",
   "homepage": "https://github.com/liknur/liknur-config#readme",
   "bugs": {
@@ -61,6 +61,7 @@
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.16",
     "babel-loader": "^10.0.0",
     "chalk": "^5.4.1",
+    "fork-ts-checker-webpack-plugin": "^9.1.0",
     "html-webpack-plugin": "^5.6.3",
     "webpack-node-externals": "^3.0.0",
     "yaml": "^2.7.1",

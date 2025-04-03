@@ -3,6 +3,7 @@ import { BuildType } from "./types/lib.js";
 import webpack, { Configuration } from "webpack";
 import ReactRefreshPlugin from "@pmmmwh/react-refresh-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
+import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
 import path from "path";
 
 export interface FrontendOptions {
@@ -101,6 +102,16 @@ export default function createFrontendConfig(
         inject: "body",
       }),
       createDefinitions(params.buildType),
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+        typescript: {
+          configFile: 'tsconfig.json',
+          diagnosticOptions: {
+            syntactic: true,
+            semantic: true,
+          }
+        }
+      })
     ],
   };
 
