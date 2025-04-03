@@ -1,0 +1,12 @@
+.git
+node_modules
+coverage
+src
+.gitignore
+eslint.config.js
+jest.config.ts
+tsconfig.json
+tsup.config.ts
+liknur-webpack-*.tgz
+
+
