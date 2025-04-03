@@ -128,6 +128,7 @@ export function liknurWebpack(
 
   const frontendWebpackConfigs = frontendConfigurations(
     servicesToBuildSet,
+    frontendAliases,
     liknurConfig,
     buildMode,
   );
@@ -137,6 +138,7 @@ export function liknurWebpack(
 
 function frontendConfigurations(
   servicesToBuildSet: Set<string>,
+  aliases: Record<string, PathLike>,
   config: LiknurConfig,
   buildMode: BuildType,
 ): Configuration[] {
@@ -158,9 +160,9 @@ function frontendConfigurations(
     );
     const frontendParams = {
       name: service.name,
-      entry: path.resolve("src/frontend", service.name, "index.ts"),
+      entry: path.resolve("src/frontend", service.name, "index"),
       buildType: buildMode,
-      aliases: getAliases("frontend", config),
+      aliases,
       output,
     } satisfies FrontendOptions;
 
