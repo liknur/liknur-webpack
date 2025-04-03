@@ -1,0 +1,59 @@
+{
+  "name": "liknur-webpack",
+  "version": "1.0.0",
+  "description": "A library that compresses and builds the liknur project based on the configuration file",
+  "homepage": "https://github.com/liknur/liknur-config#readme",
+  "bugs": {
+    "url": "https://github.com/liknur/liknur-config/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/liknur/liknur-config.git"
+  },
+  "license": "ISC",
+  "author": "Jarosław Karczmarczyk",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "npx jest --notify --config=jest.config.ts --rootDir .",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.13.16",
+    "@types/webpack": "^5.28.5",
+    "@types/webpack-node-externals": "^3.0.4",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-jest": "^28.11.0",
+    "eslint-plugin-prettier": "^5.2.5",
+    "jest": "^29.7.0",
+    "node-notifier": "^10.0.1",
+    "ts-jest": "^29.3.1",
+    "ts-node": "^10.9.2",
+    "tsup": "^8.4.0",
+    "typescript": "^5.8.2",
+    "webpack": "^5.98.0"
+  },
+  "dependencies": {
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.16",
+    "chalk": "^5.4.1",
+    "html-webpack-plugin": "^5.6.3",
+    "webpack-node-externals": "^3.0.0",
+    "yaml": "^2.7.1",
+    "zod": "^3.24.2"
+  }
+}
