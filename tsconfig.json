@@ -8,6 +8,8 @@
     "rootDir": "src",
     "strict": true,
     "esModuleInterop": true,
+    "checkJs": true,
+    "allowJs": true,
     "emitDeclarationOnly": false,
     "types": ["node", "jest"],
     "paths": {

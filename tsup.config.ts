@@ -13,5 +13,14 @@ export default defineConfig({
     "terser-webpack-plugin",
     "uglify-js",
     "@swc/core"
-  ]
+  ],
+  splitting: false,
+  sourcemap: true,
+
+  esbuildOptions(options) {
+    options.resolveExtensions = ['.ts', '.js', '.json']; 
+  },
+
+
+
 });

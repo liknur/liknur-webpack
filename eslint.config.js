@@ -1,6 +1,7 @@
 import js from '@eslint/js';
-import tseslint from '@typescript-eslint/eslint-plugin';
-import tsparser from '@typescript-eslint/parser';
+
+import tseslint from "@typescript-eslint/eslint-plugin";
+import tsparser from "@typescript-eslint/parser";
 import prettier from 'eslint-config-prettier';
 import prettierPlugin from 'eslint-plugin-prettier';
 import jest from 'eslint-plugin-jest';
@@ -66,7 +67,9 @@ export default [
     rules: {
       'jest/prefer-strict-equal': 'warn',
       'jest/no-conditional-expect': 'warn',
+      '@typescript-eslint/no-unsafe-assignment' : 'off',
+      '@typescript-eslint/no-unsafe-call' : 'off',
     },
   },
-  prettier,
+  prettier
 ];
