@@ -125,14 +125,14 @@ describe("Creataing backend webpack configuration", () => {
     expect(definitions.__DEVELOPMENT__).toBe(true);
   });
 
-  it("Given a frontend options in test mode then configuration should contain only html and definitions plugins", () => {
+  it("Given a frontend options in test mode then configuration should contain only html, definitions and ForkTsCheckerWebpackPlugin plugins", () => {
     const result = createFrontendConfig({
       ...defaultConfig,
       buildType: "test",
     });
 
-    expect(result.plugins).toHaveLength(2);
-    if (result.plugins === undefined || result.plugins.length !== 2) {
+    expect(result.plugins).toHaveLength(3);
+    if (result.plugins === undefined || result.plugins.length !== 3) {
       throw new Error("Plugins is undefined");
     }
     expect(result.plugins[0]).toBeInstanceOf(HtmlWebpackPlugin);

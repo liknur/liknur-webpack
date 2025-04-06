@@ -15,7 +15,7 @@ function isJSONObject(val: JSONValue): val is { [key: string]: JSONValue } {
 
 describe("parseConfiguration KNUR configuration file", () => {
   let defaultConfig: JSONValue;
-  let finalConfig: LiknurConfig;
+  let finalConfig: LiknurConfig["parsed"];
   beforeEach(() => {
     defaultConfig = {
       name: "Project",
@@ -33,7 +33,7 @@ describe("parseConfiguration KNUR configuration file", () => {
           buildType: ["development", "production", "test"],
         },
       ],
-    } satisfies LiknurConfig;
+    } satisfies LiknurConfig["parsed"];
   });
 
   it("Given a valid configuration file, it should return success", async () => {
@@ -41,8 +41,11 @@ describe("parseConfiguration KNUR configuration file", () => {
 
     const result = await parseConfiguration("dummy/path.yaml");
 
-    expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(finalConfig);
+    if (!result.success) {
+      throw new Error("Parsing failed");
+    }
+
+    expect(result.data.parsed).toStrictEqual(finalConfig);
   });
 
   it("Given project name shorter than 3 characters, it should return an error", async () => {
@@ -59,7 +62,10 @@ describe("parseConfiguration KNUR configuration file", () => {
 
     const result = await parseConfiguration("dummy/path.yaml");
 
-    expect(result.success).toBe(false);
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
+
     expect(result.errors).toContain(
       "Field 'name': Project name must contain at least 3 characters",
     );
@@ -79,7 +85,10 @@ describe("parseConfiguration KNUR configuration file", () => {
 
     const result = await parseConfiguration("dummy/path.yaml");
 
-    expect(result.success).toBe(false);
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
+
     expect(result.errors).toContain(
       "Field 'name': Project name must contain at most 50 characters",
     );
@@ -99,8 +108,10 @@ describe("parseConfiguration KNUR configuration file", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'root': Unrecognized key(s) in object: 'invalidField'",
     );
@@ -112,15 +123,17 @@ describe("parseConfiguration KNUR configuration file", () => {
     );
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain("Field 'name': Required");
   });
 });
 
 describe("Aliases parsing tests from Liknur configuration file", () => {
   let defaultConfig: JSONValue;
-  let finalConfig: LiknurConfig;
+  let finalConfig: LiknurConfig["parsed"];
   beforeEach(() => {
     defaultConfig = {
       name: "Project",
@@ -138,7 +151,7 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
           buildType: ["development", "production", "test"],
         },
       ],
-    } satisfies LiknurConfig;
+    } satisfies LiknurConfig["parsed"];
   });
 
   it("Given a configuration file with common aliases, it should return success", async () => {
@@ -148,10 +161,13 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     }
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success === false) {
+      throw new Error("Parsing should have succeeded");
+    }
 
-    expect(result.success).toBe(true);
     finalConfig.aliases = { common: { "@alias": "valid.ts" } };
-    expect(result.data).toStrictEqual(finalConfig);
+    expect(result.data.parsed).toStrictEqual(finalConfig);
+    expect(result.data.file).toBe("dummy/path.yaml");
   });
 
   it("Given a configuration file with frontend aliases, it should return success", async () => {
@@ -161,11 +177,12 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
-
-    expect(result.success).toBe(true);
+    if (result.success === false) {
+      throw new Error("Parsing should have succeeded");
+    }
 
     finalConfig.aliases = { frontend: {} };
-    expect(result.data).toStrictEqual(finalConfig);
+    expect(result.data.parsed).toStrictEqual(finalConfig);
   });
 
   it("Given a configuration file with backend aliases, it should return success", async () => {
@@ -175,10 +192,12 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success === false) {
+      throw new Error("Parsing should have succeeded");
+    }
 
-    expect(result.success).toBe(true);
     finalConfig.aliases = { backend: {} };
-    expect(result.data).toStrictEqual(finalConfig);
+    expect(result.data.parsed).toStrictEqual(finalConfig);
   });
 
   it("Given a configuration file with an invalid common alias, it should return an error", async () => {
@@ -188,8 +207,10 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'aliases.common.invalidAlias': Invalid",
     );
@@ -203,8 +224,10 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     mockedFs.access.mockRejectedValueOnce(new Error("File does not exist"));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'aliases.frontend.@alias': File or directory does not exist",
     );
@@ -218,10 +241,12 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     mockedFs.access.mockResolvedValueOnce();
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success === false) {
+      throw new Error("Parsing should have succeeded");
+    }
 
-    expect(result.success).toBe(true);
     finalConfig.aliases = { frontend: { "@alias": "valid.ts" } };
-    expect(result.data).toStrictEqual(finalConfig);
+    expect(result.data.parsed).toStrictEqual(finalConfig);
   });
 
   it("Given a configuration file with non existing backend alias file, it should return an error", async () => {
@@ -232,8 +257,10 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
     mockedFs.access.mockRejectedValueOnce(new Error("File does not exist"));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'aliases.backend.@alias': File or directory does not exist",
     );
@@ -242,7 +269,7 @@ describe("Aliases parsing tests from Liknur configuration file", () => {
 
 describe("Testing liknu configuration file with services", () => {
   let defaultConfig: JSONValue;
-  let finalConfig: LiknurConfig;
+  let finalConfig: LiknurConfig["parsed"];
   beforeEach(() => {
     defaultConfig = {
       name: "Project",
@@ -260,7 +287,7 @@ describe("Testing liknu configuration file with services", () => {
           buildType: ["development", "production", "test"],
         },
       ],
-    } satisfies LiknurConfig;
+    } satisfies LiknurConfig["parsed"];
   });
 
   it("Given a configuration file with services, it should return success", async () => {
@@ -270,9 +297,11 @@ describe("Testing liknu configuration file with services", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success === false) {
+      throw new Error("Parsing should have succeeded");
+    }
 
-    expect(result.success).toBe(true);
-    expect(result.data).toStrictEqual(finalConfig);
+    expect(result.data.parsed).toStrictEqual(finalConfig);
   });
 
   it("Given a configuration file with a service name shorter than 3 characters, it should return an error", async () => {
@@ -282,8 +311,10 @@ describe("Testing liknu configuration file with services", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'services.0.name': String must contain at least 3 character(s)",
     );
@@ -296,8 +327,10 @@ describe("Testing liknu configuration file with services", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain("Field 'services.0.subdomain': Invalid");
   });
 
@@ -308,8 +341,10 @@ describe("Testing liknu configuration file with services", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'services.0.subdomain': String must contain at most 15 character(s)",
     );
@@ -322,8 +357,10 @@ describe("Testing liknu configuration file with services", () => {
     mockedFs.readFile.mockResolvedValueOnce(YAML.stringify(defaultConfig));
 
     const result = await parseConfiguration("dummy/path.yaml");
+    if (result.success) {
+      throw new Error("Parsing should have failed");
+    }
 
-    expect(result.success).toBe(false);
     expect(result.errors).toContain(
       "Field 'services.0.serviceType': Invalid enum value. Expected 'frontend' | 'backend', received 'invalid'",
     );

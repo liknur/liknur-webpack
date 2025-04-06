@@ -1,3 +1,4 @@
+import { PathLike } from "node:fs";
 import { z } from "zod";
 import * as fs from "node:fs/promises";
 
@@ -55,4 +56,7 @@ export const projectSchema = z
   })
   .strict();
 
-export type LiknurConfig = z.infer<typeof projectSchema>;
+export type LiknurConfig = {
+  parsed: z.infer<typeof projectSchema>;
+  file: PathLike;
+};

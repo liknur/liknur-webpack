@@ -2,9 +2,10 @@ import { describe, expect, it } from "@jest/globals";
 jest.spyOn(console, "log").mockImplementation(() => {});
 import { LiknurConfig } from "@/schema-config";
 import { getServicesToBuild, filterServices, getAliases } from "@/extracts";
+import path from "path";
 
 describe("Check whether a services to build are in the configuration", () => {
-  let config: LiknurConfig;
+  let config: LiknurConfig["parsed"];
 
   beforeEach(() => {
     config = {
@@ -24,13 +25,13 @@ describe("Check whether a services to build are in the configuration", () => {
           buildType: ["development", "production", "test"],
         },
       ],
-    };
+    } as LiknurConfig["parsed"];
   });
 
   it("Given a valid configuration, and services exists then return same services", () => {
     const result = getServicesToBuild(
+      { parsed: config, file: "config.yaml" },
       ["api", "content"],
-      config,
       "development",
     );
 
@@ -39,8 +40,8 @@ describe("Check whether a services to build are in the configuration", () => {
 
   it("Given a valid configuration, and services do not exist then return empty array", () => {
     const result = getServicesToBuild(
+      { parsed: config, file: "config.yaml" },
       ["api", "content", "invalid"],
-      config,
       "development",
     );
 
@@ -48,20 +49,28 @@ describe("Check whether a services to build are in the configuration", () => {
   });
 
   it("Given a valid configuration, and no services then return full list of services", () => {
-    const result = getServicesToBuild([], config, "development");
+    const result = getServicesToBuild(
+      { parsed: config, file: "config.yaml" },
+      [],
+      "development",
+    );
 
     expect(result).toStrictEqual(new Set<string>(["api", "content"]));
   });
 
   it("Given a valid configuration, and one service then return that service", () => {
-    const result = getServicesToBuild(["api"], config, "development");
+    const result = getServicesToBuild(
+      { parsed: config, file: "config.yaml" },
+      ["api"],
+      "development",
+    );
 
     expect(result).toStrictEqual(new Set<string>(["api"]));
   });
 });
 
 describe("Filter frontend services from Liknur configuration and service type", () => {
-  let config: LiknurConfig;
+  let config: LiknurConfig["parsed"];
 
   beforeEach(() => {
     config = {
@@ -81,14 +90,14 @@ describe("Filter frontend services from Liknur configuration and service type", 
           buildType: ["development", "production", "test"],
         },
       ],
-    };
+    } as LiknurConfig["parsed"];
   });
 
   it("Given a valid configuration, and service exists then return same service", () => {
     const frontendServices = filterServices(
-      "frontend",
-      config,
+      { parsed: config, file: "config.yaml" },
       new Set(["content"]),
+      "frontend",
     );
 
     expect(frontendServices).toStrictEqual({
@@ -98,9 +107,9 @@ describe("Filter frontend services from Liknur configuration and service type", 
 
   it("Given a valid configuration, and service does not exist then return empty array", () => {
     const frontendServices = filterServices(
-      "frontend",
-      config,
+      { parsed: config, file: "config.yaml" },
       new Set(["invalid"]),
+      "frontend",
     );
 
     expect(frontendServices).toStrictEqual({
@@ -109,7 +118,11 @@ describe("Filter frontend services from Liknur configuration and service type", 
   });
 
   it("Given a valid configuration, and no frontend services then return empty array", () => {
-    const frontendServices = filterServices("frontend", config, new Set([]));
+    const frontendServices = filterServices(
+      { parsed: config, file: "config.yaml" },
+      new Set([]),
+      "frontend",
+    );
 
     expect(frontendServices).toStrictEqual({
       content: { toBuild: false, subdomain: "sub" },
@@ -118,9 +131,9 @@ describe("Filter frontend services from Liknur configuration and service type", 
 
   it("Given a valid configuration, and all frontend services then return all frontend services", () => {
     const frontendServices = filterServices(
-      "frontend",
-      config,
+      { parsed: config, file: "config.yaml" },
       new Set(["content", "api"]),
+      "frontend",
     );
 
     expect(frontendServices).toStrictEqual({
@@ -130,7 +143,7 @@ describe("Filter frontend services from Liknur configuration and service type", 
 });
 
 describe("Getting frontend aliases from Liknur configuration", () => {
-  let config: LiknurConfig;
+  let config: LiknurConfig["parsed"];
 
   beforeEach(() => {
     config = {
@@ -149,11 +162,14 @@ describe("Getting frontend aliases from Liknur configuration", () => {
           buildType: ["development", "production", "test"],
         },
       ],
-    };
+    } as LiknurConfig["parsed"];
   });
 
   it("Given a valid configuration with frontend aliases then return frontend aliases", () => {
-    const aliases = getAliases("frontend", config);
+    const aliases = getAliases(
+      { parsed: config, file: "config.yaml" },
+      "frontend",
+    );
     expect(aliases).toStrictEqual({
       "@frontend": "src/frontend",
     });
@@ -168,14 +184,20 @@ describe("Getting frontend aliases from Liknur configuration", () => {
       "@common": "src/common",
     };
 
-    const aliases = getAliases("frontend", config);
+    const aliases = getAliases(
+      { parsed: config, file: "config.yaml" },
+      "frontend",
+    );
     expect(aliases).toStrictEqual({ "@common": "src/common" });
   });
 
   it("Given no aliases then return empty object", () => {
     delete config.aliases;
 
-    const aliases = getAliases("frontend", config);
+    const aliases = getAliases(
+      { parsed: config, file: "config.yaml" },
+      "frontend",
+    );
     expect(aliases).toStrictEqual({});
   });
 
@@ -190,7 +212,10 @@ describe("Getting frontend aliases from Liknur configuration", () => {
       "@common": "src/common",
     };
 
-    const aliases = getAliases("frontend", config);
+    const aliases = getAliases(
+      { parsed: config, file: "config.yaml" },
+      "frontend",
+    );
     expect(aliases).toStrictEqual({
       "@frontend": "src/frontend",
       "@common": "src/common",
@@ -211,11 +236,36 @@ describe("Getting frontend aliases from Liknur configuration", () => {
       "@frontend": "src/frontend",
     };
 
-    const aliases = getAliases(null, config);
+    const aliases = getAliases({ parsed: config, file: "config.yaml" });
     expect(aliases).toStrictEqual({
       "@frontend": "src/frontend",
       "@common": "src/common",
       "@backend": "src/backend",
+    });
+  });
+
+  it("Given aliases and resolve flag then return resolved aliases", () => {
+    if (config.aliases === undefined) {
+      config.aliases = {};
+    }
+    config.aliases.backend = {
+      "@backend": "src/backend",
+    };
+    config.aliases.common = {
+      "@common": "src/common",
+    };
+    config.aliases.frontend = {
+      "@frontend": "src/frontend",
+    };
+
+    const aliases = getAliases(
+      { parsed: config, file: "config.yaml" },
+      "frontend",
+      "resolve",
+    );
+    expect(aliases).toStrictEqual({
+      "@frontend": path.resolve("src/frontend"),
+      "@common": path.resolve("src/common"),
     });
   });
 });

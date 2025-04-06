@@ -6,14 +6,15 @@ import createBackendConfig, { BackendOptions } from "@/backend";
 import createFrontendConfig, { FrontendOptions } from "@/frontend";
 import { getServicesToBuild, filterServices, getAliases } from "@/extracts";
 import { ServiceInfo } from "@/types/common";
-import { PathLike } from "fs";
 import chalk from "chalk";
+import type { PathLike } from "node:fs";
 
 function getBackendOptions(
   buildMode: BuildType,
   backendServices: Record<string, ServiceInfo>,
   frontendServices: Record<string, ServiceInfo>,
   aliases: Record<string, PathLike>,
+  projectConfig: PathLike,
 ): BackendOptions {
   const output = path.resolve("dist", buildMode, "server");
   return {
@@ -23,11 +24,12 @@ function getBackendOptions(
     aliases,
     entry: "./src/backend/index.ts",
     output,
+    projectConfig,
   };
 }
 
 function validateServices(
-  servicesToBuildSet: Set<string>,
+  servicesToBuildSet: ReadonlySet<string>,
   config: LiknurConfig,
 ): boolean {
   if (servicesToBuildSet.size === 0) {
@@ -39,7 +41,8 @@ function validateServices(
     frontend: new Set<string>(),
     backend: new Set<string>(),
   };
-  for (const service of config.services) {
+  const services = config.parsed.services;
+  for (const service of services) {
     if (!servicesToBuildSet.has(service.name)) continue;
 
     if (subdomains[service.serviceType].has(service.subdomain)) {
@@ -55,29 +58,54 @@ function validateServices(
   return true;
 }
 
+export function liknurWebpackDev(
+  liknurConfig: LiknurConfig,
+  frontendServices: ReadonlyArray<string>,
+): ReadonlyArray<Configuration> {
+  const servicesToBuildSet = getServicesToBuild(
+    liknurConfig,
+    frontendServices,
+    "development",
+  );
+  if (!validateServices(servicesToBuildSet, liknurConfig)) {
+    return [];
+  }
+
+  const frontendAliases = getAliases(liknurConfig, "frontend", "resolve");
+
+  const frontendWebpackConfigs = frontendConfigurations(
+    liknurConfig,
+    servicesToBuildSet,
+    frontendAliases,
+    "development",
+  );
+
+  return frontendWebpackConfigs;
+}
+
 export function liknurWebpack(
   liknurConfig: LiknurConfig,
   buildMode: BuildType,
-  servicesToBuild: string[],
+  servicesToBuild: ReadonlyArray<string>,
 ): Configuration[] {
   const servicesToBuildSet = getServicesToBuild(
-    servicesToBuild,
     liknurConfig,
+    servicesToBuild,
     buildMode,
   );
   if (!validateServices(servicesToBuildSet, liknurConfig)) {
     return [];
   }
   const backendServices = filterServices(
-    "backend",
     liknurConfig,
     servicesToBuildSet,
+    "backend",
   );
 
   const frontendServices = filterServices(
-    "frontend",
     liknurConfig,
     servicesToBuildSet,
+    "frontend",
   );
 
   console.log(
@@ -96,24 +124,19 @@ export function liknurWebpack(
       chalk.bold(Object.keys(frontendServices).join(", ")),
   );
 
-  const backendAliases = getAliases("backend", liknurConfig);
-  const frontendAliases = getAliases("frontend", liknurConfig);
+  const backendAliases = getAliases(liknurConfig, "backend", "resolve");
+  const frontendAliases = getAliases(liknurConfig, "frontend", "resolve");
 
-  for (const key in frontendAliases) {
-    if (typeof frontendAliases[key] !== "string") {
-      throw new Error("Invalid type");
-    }
-
-    frontendAliases[key] = path.resolve(frontendAliases[key]);
-  }
-
-  for (const key in backendAliases) {
-    if (typeof backendAliases[key] !== "string") {
-      throw new Error("Invalid type");
-    }
-
-    backendAliases[key] = path.resolve(backendAliases[key]);
-  }
+  console.log("Aliases for frontend services:");
+  Object.entries(frontendAliases).forEach(([key, val]) => {
+    console.log(" ".repeat(4) + chalk.bold(key) + ` : ${val.toString()}`);
+  });
+  console.log(`\n`);
+  console.log("Aliases for backend services:");
+  Object.entries(backendAliases).forEach(([key, val]) => {
+    console.log(" ".repeat(4) + chalk.bold(key) + ` : ${val.toString()}`);
+  });
+  console.log(`\n`);
 
   console.log("Building " + chalk.bold("server") + " component");
 
@@ -122,14 +145,16 @@ export function liknurWebpack(
     backendServices,
     frontendServices,
     backendAliases,
+    liknurConfig.file,
   );
+
   const backendWebpackConfig = createBackendConfig(options);
   if (buildMode === "development") return [backendWebpackConfig];
 
   const frontendWebpackConfigs = frontendConfigurations(
+    liknurConfig,
     servicesToBuildSet,
     frontendAliases,
-    liknurConfig,
     buildMode,
   );
 
@@ -137,14 +162,15 @@ export function liknurWebpack(
 }
 
 function frontendConfigurations(
-  servicesToBuildSet: Set<string>,
-  aliases: Record<string, PathLike>,
   config: LiknurConfig,
+  servicesToBuildSet: ReadonlySet<string>,
+  aliases: Readonly<Record<string, PathLike>>,
   buildMode: BuildType,
 ): Configuration[] {
   const retval: Configuration[] = [];
+  const services = config.parsed.services;
 
-  for (const service of config.services) {
+  for (const service of services) {
     if (
       !servicesToBuildSet.has(service.name) ||
       service.serviceType !== "frontend"
@@ -158,16 +184,16 @@ function frontendConfigurations(
       "static-content",
       service.name,
     );
-    const frontendParams = {
+    const frontendParams: FrontendOptions = {
       name: service.name,
       entry: path.resolve("src/frontend", service.name, "index"),
       buildType: buildMode,
       aliases,
       output,
-    } satisfies FrontendOptions;
+    };
 
-    console.log(`Frontend entry point: ${frontendParams.entry}`);
-    console.log(`Frontend output: ${frontendParams.output}`);
+    console.log(`Frontend entry point: ${frontendParams.entry.toString()}`);
+    console.log(`Frontend output: ${frontendParams.output.toString()}`);
 
     const frontendWebpackConfig = createFrontendConfig(frontendParams);
     if (frontendWebpackConfig == null) {

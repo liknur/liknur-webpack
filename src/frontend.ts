@@ -3,7 +3,8 @@ import { BuildType } from "./types/lib.js";
 import webpack, { Configuration } from "webpack";
 import ReactRefreshPlugin from "@pmmmwh/react-refresh-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
-import ForkTsCheckerWebpackPlugin from 'fork-ts-checker-webpack-plugin';
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
+import TerserPlugin from "terser-webpack-plugin";
 import path from "path";
 
 export interface FrontendOptions {
@@ -60,9 +61,6 @@ export default function createFrontendConfig(
       publicPath,
     },
     stats: "minimal",
-    optimization: {
-      runtimeChunk: true,
-    },
     resolve: {
       extensions: [".js", ".jsx", ".ts", ".tsx"],
       alias: params.aliases as Record<string, string>,
@@ -105,19 +103,54 @@ export default function createFrontendConfig(
       new ForkTsCheckerWebpackPlugin({
         async: false,
         typescript: {
-          configFile: 'tsconfig.json',
+          configFile: "tsconfig.json",
           diagnosticOptions: {
             syntactic: true,
             semantic: true,
-          }
-        }
-      })
+          },
+        },
+      }),
     ],
   };
 
-  if (params.buildType === "production" || params.buildType === "test") {
+  const isProduction = params.buildType === "production";
+  const isTest = params.buildType === "test";
+  if (isProduction || isTest) {
+    frontendConfig.optimization = {};
+    frontendConfig.optimization.minimize = true;
+    frontendConfig.optimization.minimizer = [
+      new TerserPlugin({
+        terserOptions: {
+          compress: {
+            drop_console: isProduction, // removal of console.log
+            drop_debugger: isProduction, // removal of debugger
+            dead_code: true, // removal of dead code
+            conditionals: true, // removal of dead branches
+            unused: isProduction, // removal of unused variables
+          },
+          output: {
+            comments: isProduction, // removal of comments
+          },
+        },
+        extractComments: false, // disable comments extraction
+      }),
+    ];
+    frontendConfig.optimization.splitChunks = {
+      chunks: "all", // split chunks for all types of modules
+    };
+    frontendConfig.optimization.runtimeChunk = {
+      name: "runtime", // create a separate chunk for the runtime
+    };
+    frontendConfig.optimization.usedExports = true; // mark used exports
+    frontendConfig.optimization.sideEffects = true; // mark side effects
+    frontendConfig.optimization.concatenateModules = true; // enable module concatenation
     frontendConfig.mode = "production";
+  }
+
+  if (isProduction) {
     frontendConfig.devtool = false;
+  } else if (isTest) {
+    frontendConfig.devtool = "source-map";
   } else {
     frontendConfig.mode = "development";
     frontendConfig.devtool = "source-map";

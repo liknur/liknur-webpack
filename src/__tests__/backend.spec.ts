@@ -52,6 +52,7 @@ describe("Creataing backend webpack configuration", () => {
       },
       entry: "./src/index.ts",
       output: "dist",
+      projectConfig: "project.config.yaml",
     };
   });
 

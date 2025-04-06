@@ -4,6 +4,7 @@ import { BuildType, ServiceType } from "./types/lib.js";
 import nodeExternals from "webpack-node-externals";
 import chalk from "chalk";
 import { ServiceInfo } from "./types/common";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 
 export interface BackendOptions {
   buildType: BuildType;
@@ -12,11 +13,12 @@ export interface BackendOptions {
   aliases: Record<string, PathLike>;
   entry: PathLike;
   output: PathLike;
+  projectConfig: PathLike;
 }
 
 type BackendDefinitionsOptions = Pick<
   BackendOptions,
-  "backendServices" | "frontendServices" | "buildType"
+  "backendServices" | "frontendServices" | "buildType" | "projectConfig"
 >;
 
 function servicesToArrays(services: Record<string, ServiceInfo>): string[] {
@@ -72,6 +74,7 @@ function createDefinitions(
     __PRODUCTION__: params.buildType === "production",
     __BACKEND_SERVICES__: JSON.stringify(backendServices),
     __FRONTEND_SERVICES__: JSON.stringify(frontendServices),
+    __PROJECT_CONFIG_FILE__: JSON.stringify(params.projectConfig),
     ...servicesToDefinitions("backend", params.backendServices),
     ...servicesToDefinitions("frontend", params.frontendServices),
   };
@@ -124,6 +127,18 @@ export default function backend(params: BackendOptions): Configuration {
     experiments: {
       topLevelAwait: true,
     },
-    plugins: [createDefinitions(params)],
+    plugins: [
+      createDefinitions(params),
+      new ForkTsCheckerWebpackPlugin({
+        async: false,
+        typescript: {
+          configFile: "tsconfig.json",
+          diagnosticOptions: {
+            syntactic: true,
+            semantic: true,
+          },
+        },
+      }),
+    ],
   };
 }

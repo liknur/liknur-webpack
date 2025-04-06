@@ -58,9 +58,21 @@ const projectSchema = z
   })
   .strict();
 
+interface ParseResultOk {
+  readonly success: true;
+  readonly data: LiknurConfig;
+}
+
+interface ParseResultError {
+  readonly success: false;
+  readonly errors: string[];
+}
+
+type ParseResult = ParseResultOk | ParseResultError;
+
 export async function parseConfiguration(
   configFile: PathLike,
-): Promise<{ success: boolean; errors?: string[]; data?: LiknurConfig }> {
+): Promise<ParseResult> {
   const raw = await fs.readFile(configFile, "utf-8");
 
   let config;
@@ -73,7 +85,8 @@ export async function parseConfiguration(
 
   try {
     const result = await projectSchema.parseAsync(config);
-    return { success: true, data: result };
+    const configResult = { parsed: result, file: configFile };
+    return { success: true, data: configResult };
   } catch (erro) {
     if (erro instanceof z.ZodError) {
       return {

@@ -3,20 +3,24 @@ import { LiknurConfig } from "@/schema-config";
 import { ServiceInfo } from "@/types/common";
 import { PathLike } from "fs";
 import { BuildType } from "@/types/lib";
+import path from "path";
 
 export function getAliases(
-  serviceType: ServiceType | null,
   config: LiknurConfig,
-): Record<string, PathLike> {
+  serviceType?: ServiceType,
+  resolve?: "resolve",
+): Readonly<Record<string, PathLike>> {
   let retval: Record<string, PathLike> = {};
 
-  if (config.aliases === undefined) {
+  const aliases = config.parsed.aliases;
+
+  if (aliases == null) {
     return retval;
   }
 
-  const backendAliases = config.aliases.backend;
-  const frontendAliases = config.aliases.frontend;
-  const commonAliases = config.aliases.common;
+  const backendAliases = aliases.backend;
+  const frontendAliases = aliases.frontend;
+  const commonAliases = aliases.common;
   if (commonAliases != null) {
     retval = { ...commonAliases };
   }
@@ -35,22 +39,28 @@ export function getAliases(
     retval = { ...retval, ...backendAliases };
   }
 
+  if (resolve === "resolve") {
+    Object.keys(retval).forEach((key) => {
+      retval[key] = path.resolve(retval[key].toString());
+    });
+  }
+
   return retval;
 }
 
 export function filterServices(
-  serviceType: ServiceType,
   config: LiknurConfig,
-  servicesToBuild: Set<string>,
+  servicesToBuild: ReadonlySet<string>,
+  serviceType: ServiceType,
 ): Record<string, ServiceInfo> {
   const retval: Record<string, ServiceInfo> = {};
 
-  for (const service of config.services)
+  for (const service of config.parsed.services)
     if (service.serviceType === serviceType) {
       retval[service.name] = { toBuild: false, subdomain: service.subdomain };
     }
 
-  for (const service of config.services) {
+  for (const service of config.parsed.services) {
     if (
       service.serviceType === serviceType &&
       servicesToBuild.has(service.name)
@@ -63,14 +73,14 @@ export function filterServices(
 }
 
 export function getServicesToBuild(
-  servicesToBuild: string[],
   config: LiknurConfig,
+  servicesToBuild: ReadonlyArray<string>,
   buildMode: BuildType,
-): Set<string> {
+): ReadonlySet<string> {
   const retval = new Set<string>();
 
   if (servicesToBuild.length === 0) {
-    for (const service of config.services) {
+    for (const service of config.parsed.services) {
       if (service.buildType.includes(buildMode)) {
         retval.add(service.name);
       }
@@ -79,9 +89,11 @@ export function getServicesToBuild(
   }
 
   const allServices = new Set(
-    config.services
+    config.parsed.services
       .filter((service) => service.buildType.includes(buildMode))
-      .map((service: LiknurConfig["services"][number]) => service.name),
+      .map(
+        (service: LiknurConfig["parsed"]["services"][number]) => service.name,
+      ),
   );
 
   for (const serviceName of servicesToBuild) {
