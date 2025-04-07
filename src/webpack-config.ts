@@ -1,13 +1,14 @@
 import { Configuration } from "webpack";
 import path from "path";
 import { BuildType } from "./types/lib.js";
-import { LiknurConfig } from "./schema-config.js";
+import { LiknurConfig } from "./parse-config.js";
 import createBackendConfig, { BackendOptions } from "@/backend";
 import createFrontendConfig, { FrontendOptions } from "@/frontend";
 import { getServicesToBuild, filterServices, getAliases } from "@/extracts";
 import { ServiceInfo } from "@/types/common";
 import chalk from "chalk";
 import type { PathLike } from "node:fs";
+import { merge } from "webpack-merge";
 
 function getBackendOptions(
   buildMode: BuildType,
@@ -58,10 +59,10 @@ function validateServices(
   return true;
 }
 
-export function liknurWebpackDev(
+export async function liknurWebpackDev(
   liknurConfig: LiknurConfig,
   frontendServices: ReadonlyArray<string>,
-): ReadonlyArray<Configuration> {
+): Promise<ReadonlyArray<Configuration>> {
   const servicesToBuildSet = getServicesToBuild(
     liknurConfig,
     frontendServices,
@@ -73,7 +74,7 @@ export function liknurWebpackDev(
 
   const frontendAliases = getAliases(liknurConfig, "frontend", "resolve");
 
-  const frontendWebpackConfigs = frontendConfigurations(
+  const frontendWebpackConfigs = await frontendConfigurations(
     liknurConfig,
     servicesToBuildSet,
     frontendAliases,
@@ -83,11 +84,11 @@ export function liknurWebpackDev(
   return frontendWebpackConfigs;
 }
 
-export function liknurWebpack(
+export async function liknurWebpack(
   liknurConfig: LiknurConfig,
   buildMode: BuildType,
   servicesToBuild: ReadonlyArray<string>,
-): Configuration[] {
+): Promise<Configuration[]> {
   const servicesToBuildSet = getServicesToBuild(
     liknurConfig,
     servicesToBuild,
@@ -151,7 +152,7 @@ export function liknurWebpack(
   const backendWebpackConfig = createBackendConfig(options);
   if (buildMode === "development") return [backendWebpackConfig];
 
-  const frontendWebpackConfigs = frontendConfigurations(
+  const frontendWebpackConfigs = await frontendConfigurations(
     liknurConfig,
     servicesToBuildSet,
     frontendAliases,
@@ -161,14 +162,28 @@ export function liknurWebpack(
   return [backendWebpackConfig, ...frontendWebpackConfigs];
 }
 
-function frontendConfigurations(
+async function frontendConfigurations(
   config: LiknurConfig,
   servicesToBuildSet: ReadonlySet<string>,
   aliases: Readonly<Record<string, PathLike>>,
   buildMode: BuildType,
-): Configuration[] {
+): Promise<Configuration[]> {
   const retval: Configuration[] = [];
   const services = config.parsed.services;
+  let userWebpackConfig: Configuration | undefined;
+  if (config.parsed.settings?.frontendWebpackConfig) {
+    const userWebpackConfigPath = path.resolve(
+      config.parsed.settings.frontendWebpackConfig,
+    );
+    console.log(
+      "Using user webpack configuration from " +
+        chalk.gray(userWebpackConfigPath),
+    );
+    const moduleConfig: { default: Configuration } = (await import(
+      userWebpackConfigPath
+    )) as unknown as { default: Configuration };
+    userWebpackConfig = moduleConfig.default;
+  }
 
   for (const service of services) {
     if (
@@ -199,8 +214,12 @@ function frontendConfigurations(
     if (frontendWebpackConfig == null) {
       throw new Error("Invalid frontend configuration");
     }
-
-    retval.push(frontendWebpackConfig);
+    if (userWebpackConfig) {
+      const mergedConfig = merge(frontendWebpackConfig, userWebpackConfig);
+      retval.push(mergedConfig);
+    } else {
+      retval.push(frontendWebpackConfig);
+    }
   }
 
   return retval;

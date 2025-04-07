@@ -6,6 +6,6 @@ export * from "./parse-config.js";
 export * from "./webpack-config.js";
 export * from "./types/lib.js";
 export { getAliases } from "./extracts.js";
-export type { LiknurConfig } from "./schema-config.js";
+export type { LiknurConfig } from "./parse-config.js";
 export * from "./hot-middleware/middleware.js";
 export { getSubdomainName } from "./subdomain.js";

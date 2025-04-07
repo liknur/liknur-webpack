@@ -1,7 +1,7 @@
 import { describe, expect, it } from "@jest/globals";
 import { parseConfiguration } from "@/parse-config";
 import type { JSONValue } from "@/types/common";
-import type { LiknurConfig } from "@/schema-config";
+import type { LiknurConfig } from "@/parse-config";
 import YAML from "yaml";
 import * as fs from "node:fs/promises";
 

@@ -1,5 +1,5 @@
 import { ServiceType } from "@/types/lib";
-import { LiknurConfig } from "@/schema-config";
+import { LiknurConfig } from "@/parse-config";
 import { ServiceInfo } from "@/types/common";
 import { PathLike } from "fs";
 import { BuildType } from "@/types/lib";

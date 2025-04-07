@@ -26,7 +26,7 @@ export async function frontendHotMiddleware(
 
   app.use(
     devMiddlewareWrapper(
-      liknurWebpackDev(liknurConfig, frontendServices),
+      await liknurWebpackDev(liknurConfig, frontendServices),
       frontendServices,
       domain,
       logger,

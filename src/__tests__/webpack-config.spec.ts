@@ -1,6 +1,6 @@
 import path from "path";
 import { describe, expect, it } from "@jest/globals";
-import type { LiknurConfig } from "@/schema-config";
+import type { LiknurConfig } from "@/parse-config";
 import { JSONValue } from "@/types/common";
 
 jest.mock("@/backend");
@@ -66,9 +66,9 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     };
   });
 
-  it("Given a valid Liknur configuration file, it should return webpack configuration", () => {
+  it("Given a valid Liknur configuration file, it should return webpack configuration", async () => {
     options.output = path.resolve("dist", "development", "server");
-    liknurWebpack(
+    await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "development",
       ["api"],
@@ -77,9 +77,9 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     expect(createBackendConfig).toHaveBeenCalledWith(options);
   });
 
-  it("Given a valid Liknur configuration file and multiple services, it should return webpack configuration", () => {
+  it("Given a valid Liknur configuration file and multiple services, it should return webpack configuration", async () => {
     options.frontendServices = { public: { toBuild: true, subdomain: "pub" } };
-    liknurWebpack(
+    await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "development",
       ["api", "public"],
@@ -88,9 +88,9 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     expect(createBackendConfig).toHaveBeenCalledWith(options);
   });
 
-  it("when no services are provided, it should return webpack configuration", () => {
+  it("when no services are provided, it should return webpack configuration", async () => {
     options.frontendServices = { public: { toBuild: true, subdomain: "pub" } };
-    liknurWebpack(
+    await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "development",
       [],
@@ -99,7 +99,7 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     expect(createBackendConfig).toHaveBeenCalledWith(options);
   });
 
-  it("When two services with the same name and serviceType provided, it should cause an error", () => {
+  it("When two services with the same name and serviceType provided, it should cause an error", async () => {
     if (isJSONObject(defaultConfig.services[0])) {
       defaultConfig.services.push({
         name: "api",
@@ -110,7 +110,7 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     }
 
     expect(
-      liknurWebpack(
+      await liknurWebpack(
         { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
         "development",
         ["api"],
@@ -118,7 +118,7 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     ).toStrictEqual([]);
   });
 
-  it("When two services with the same subdomain and different serviceType provided no error should be thrown", () => {
+  it("When two services with the same subdomain and different serviceType provided no error should be thrown", async () => {
     options.frontendServices = {
       public: { toBuild: true, subdomain: "pub" },
       api: { toBuild: true, subdomain: "api" },
@@ -132,7 +132,7 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
       } satisfies LiknurConfig["parsed"]["services"][number]);
     }
 
-    liknurWebpack(
+    await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "development",
       [],
@@ -141,7 +141,7 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     expect(createBackendConfig).toHaveBeenCalledWith(options);
   });
 
-  it("When service is not in buildType, it should not be built", () => {
+  it("When service is not in buildType, it should not be built", async () => {
     if (isJSONObject(defaultConfig.services[0])) {
       defaultConfig.services.push({
         name: "user",
@@ -159,7 +159,7 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     options.buildType = "test";
     options.output = path.resolve("dist", "test", "server");
 
-    liknurWebpack(
+    await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "test",
       ["api", "public"],
@@ -168,8 +168,8 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     expect(createBackendConfig).toHaveBeenCalledWith(options);
   });
 
-  it("When frontend and backend services are provided in development mode only backend service should be built", () => {
-    const configurations = liknurWebpack(
+  it("When frontend and backend services are provided in development mode only backend service should be built", async () => {
+    const configurations = await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "development",
       [],
@@ -178,8 +178,8 @@ describe("Generate webpack configuration based on Liknur configuration", () => {
     expect(configurations.length).toBe(1);
   });
 
-  it("When frontend and backend services are provided in production mode both should be built", () => {
-    const configurations = liknurWebpack(
+  it("When frontend and backend services are provided in production mode both should be built", async () => {
+    const configurations = await liknurWebpack(
       { parsed: defaultConfig, file: path.resolve("project.config.yaml") },
       "production",
       [],

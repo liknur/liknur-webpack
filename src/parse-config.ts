@@ -1,5 +1,4 @@
 import { PathLike } from "fs";
-import { LiknurConfig } from "./schema-config.js";
 import { z } from "zod";
 import YAML from "yaml";
 import * as fs from "node:fs/promises";
@@ -46,6 +45,10 @@ const aliasesSchema = z.object({
   backend: z.record(aliasNameSchema, fsPathSchema).optional(),
 });
 
+const settingsSchema = z.object({
+  frontendWebpackConfig: z.string(fsPathSchema).optional(),
+});
+
 const projectSchema = z
   .object({
     name: z
@@ -53,10 +56,16 @@ const projectSchema = z
       .min(3, { message: "Project name must contain at least 3 characters" })
       .max(50, { message: "Project name must contain at most 50 characters" }),
     version: z.string().min(5).max(10),
+    settings: settingsSchema.optional(),
     aliases: aliasesSchema.optional(),
     services: z.array(serviceSchema),
   })
   .strict();
+
+export type LiknurConfig = {
+  parsed: z.infer<typeof projectSchema>;
+  file: PathLike;
+};
 
 interface ParseResultOk {
   readonly success: true;

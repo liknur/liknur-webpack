@@ -1,6 +1,6 @@
 import { describe, expect, it } from "@jest/globals";
 jest.spyOn(console, "log").mockImplementation(() => {});
-import { LiknurConfig } from "@/schema-config";
+import { LiknurConfig } from "@/parse-config";
 import { getServicesToBuild, filterServices, getAliases } from "@/extracts";
 import path from "path";
 
