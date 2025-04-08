@@ -179,10 +179,11 @@ async function frontendConfigurations(
       "Using user webpack configuration from " +
         chalk.gray(userWebpackConfigPath),
     );
-    const moduleConfig: { default: Configuration } = (await import(
+
+    const moduleConfig = (await import(
       userWebpackConfigPath
-    )) as unknown as { default: Configuration };
-    userWebpackConfig = moduleConfig.default;
+    )) as unknown as { default: (buildMode: BuildType) => Configuration };
+    userWebpackConfig = moduleConfig.default(buildMode);
   }
 
   for (const service of services) {
