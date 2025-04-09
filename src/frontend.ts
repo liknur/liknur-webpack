@@ -51,6 +51,10 @@ export default function createFrontendConfig(
   let publicPath = "/";
 
   const frontendConfig: Configuration = {
+    watchOptions: {
+      ignored: ["**/node_modules", "**/.git", "**/*.test.*"],
+      aggregateTimeout: 300,
+    },
     target: "web",
     name: params.name,
     entry: composeEntry(params.entry, publicPath, params.buildType),

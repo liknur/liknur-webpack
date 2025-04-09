@@ -5,6 +5,7 @@ import history from "connect-history-api-fallback";
 import devMiddlewareWrapper from "./dev-request-wrapper.js";
 import { parseConfiguration } from "../parse-config.js";
 import { liknurWebpackDev } from "../webpack-config.js";
+import chalk from "chalk";
 
 export async function frontendHotMiddleware(
   app: koa,
@@ -13,6 +14,10 @@ export async function frontendHotMiddleware(
   liknurConfigFile: string,
   frontendServices: ReadonlyArray<string>,
 ): Promise<void> {
+  logger.info(
+    "Starting frontend hot middleware using proect config file:" +
+      chalk.bold(liknurConfigFile),
+  );
   // eslint-disable-next-line
   app.use(koaMiddleware(history() as unknown as any));
 

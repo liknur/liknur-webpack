@@ -1,6 +1,6 @@
 {
   "name": "liknur-webpack",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "A library that compresses and builds the liknur project based on the configuration file",
   "homepage": "https://github.com/liknur/liknur-config#readme",
   "bugs": {

@@ -180,9 +180,9 @@ async function frontendConfigurations(
         chalk.gray(userWebpackConfigPath),
     );
 
-    const moduleConfig = (await import(
-      userWebpackConfigPath
-    )) as unknown as { default: (buildMode: BuildType) => Configuration };
+    const moduleConfig = (await import(userWebpackConfigPath)) as unknown as {
+      default: (buildMode: BuildType) => Configuration;
+    };
     userWebpackConfig = moduleConfig.default(buildMode);
   }
 
