@@ -17,7 +17,7 @@ const serviceSchema = z.object({
       message: "Build types must be unique",
     })
     .default(["development", "production", "test"]),
-  ['config-sections']: z.array(z.enum(["frontend", "backend"])).optional(),
+  ['config-sections']: z.array(z.string()).optional(),
 });
 
 const fsPathSchema = z.string().refine(
