@@ -56,13 +56,13 @@ export function filterServices(
   const retval: Record<string, ServiceInfo> = {};
 
   for (const service of config.parsed.services)
-    if (service.serviceType === serviceType) {
+    if (service['service-type'] === serviceType) {
       retval[service.name] = { toBuild: false, subdomain: service.subdomain };
     }
 
   for (const service of config.parsed.services) {
     if (
-      service.serviceType === serviceType &&
+      service['service-type'] === serviceType &&
       servicesToBuild.has(service.name)
     ) {
       retval[service.name].toBuild = true;
@@ -81,7 +81,7 @@ export function getServicesToBuild(
 
   if (servicesToBuild.length === 0) {
     for (const service of config.parsed.services) {
-      if (service.buildType.includes(buildMode)) {
+      if (service['build-type'].includes(buildMode)) {
         retval.add(service.name);
       }
     }
@@ -90,7 +90,7 @@ export function getServicesToBuild(
 
   const allServices = new Set(
     config.parsed.services
-      .filter((service) => service.buildType.includes(buildMode))
+      .filter((service) => service['build-type'].includes(buildMode))
       .map(
         (service: LiknurConfig["parsed"]["services"][number]) => service.name,
       ),

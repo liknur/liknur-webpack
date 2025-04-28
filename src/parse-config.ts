@@ -10,13 +10,14 @@ const serviceSchema = z.object({
     .max(15)
     .regex(/^[a-z0-9-]*$/)
     .default(""),
-  serviceType: z.enum(["frontend", "backend"]),
-  buildType: z
+  ['service-type']: z.enum(["frontend", "backend"]),
+  ['build-type']: z
     .array(z.enum(["development", "production", "test"]))
     .refine((arr) => new Set(arr).size === arr.length, {
       message: "Build types must be unique",
     })
     .default(["development", "production", "test"]),
+  ['config-sections']: z.array(z.enum(["frontend", "backend"])).optional(),
 });
 
 const fsPathSchema = z.string().refine(
@@ -46,7 +47,7 @@ const aliasesSchema = z.object({
 });
 
 const settingsSchema = z.object({
-  frontendWebpackConfig: z.string(fsPathSchema).optional(),
+  ['frontend-webpack-config']: z.string(fsPathSchema).optional(),
 });
 
 const projectSchema = z

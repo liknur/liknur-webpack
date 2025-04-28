@@ -46,7 +46,7 @@ function validateServices(
   for (const service of services) {
     if (!servicesToBuildSet.has(service.name)) continue;
 
-    if (subdomains[service.serviceType].has(service.subdomain)) {
+    if (subdomains[service['service-type']].has(service.subdomain)) {
       console.log(
         chalk.red(
           `Subdomain "${service.subdomain}" for service "${service.name}" is already in use by another service`,
@@ -54,7 +54,7 @@ function validateServices(
       );
       return false;
     }
-    subdomains[service.serviceType].add(service.subdomain);
+    subdomains[service['service-type']].add(service.subdomain);
   }
   return true;
 }
@@ -171,9 +171,9 @@ async function frontendConfigurations(
   const retval: Configuration[] = [];
   const services = config.parsed.services;
   let userWebpackConfig: Configuration | undefined;
-  if (config.parsed.settings?.frontendWebpackConfig) {
+  if (config.parsed.settings?.['frontend-webpack-config']) {
     const userWebpackConfigPath = path.resolve(
-      config.parsed.settings.frontendWebpackConfig,
+      config.parsed.settings?.['frontend-webpack-config'],
     );
     console.log(
       "Using user webpack configuration from " +
@@ -189,7 +189,7 @@ async function frontendConfigurations(
   for (const service of services) {
     if (
       !servicesToBuildSet.has(service.name) ||
-      service.serviceType !== "frontend"
+      service['service-type'] !== "frontend"
     ) {
       continue;
     }
